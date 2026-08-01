@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: carscope-backend
+spec:
+  selector:
+    app: carscope
+    tier: backend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: carscope-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/limit-rps: "20"
+spec:
+  tls:
+  - hosts:
+    - api.carscope.ai
+    secretName: carscope-tls
+  rules:
+  - host: api.carscope.ai
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: carscope-backend
+            port:
+              number: 80

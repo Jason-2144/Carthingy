@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: carscope-backend
+  labels:
+    app: carscope
+    tier: backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: carscope
+      tier: backend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: carscope
+        tier: backend
+    spec:
+      containers:
+      - name: backend
+        image: carscope/backend:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+        envFrom:
+        - secretRef:
+            name: carscope-secrets
+        - configMapRef:
+            name: carscope-config
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "512Mi"
+          limits:
+            cpu: "1000m"
+            memory: "1Gi"
+        livenessProbe:
+          httpGet:
+            path: /api/v1/health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /api/v1/health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: carscope-worker
+  labels:
+    app: carscope
+    tier: worker
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: carscope
+      tier: worker
+  template:
+    metadata:
+      labels:
+        app: carscope
+        tier: worker
+    spec:
+      containers:
+      - name: worker
+        image: carscope/worker:latest
+        imagePullPolicy: Always
+        envFrom:
+        - secretRef:
+            name: carscope-secrets
+        - configMapRef:
+            name: carscope-config
+        resources:
+          requests:
+            cpu: "200m"
+            memory: "512Mi"
+          limits:
+            cpu: "1000m"
+            memory: "1Gi"

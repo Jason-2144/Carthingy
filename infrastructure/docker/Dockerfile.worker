@@ -1,0 +1,23 @@
+# Build stage
+FROM python:3.11-slim as builder
+
+WORKDIR /app
+COPY backend/requirements.txt .
+RUN pip install --user --no-cache-dir -r requirements.txt
+
+# Production stage
+FROM python:3.11-slim
+
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+
+WORKDIR /app
+COPY --from=builder /root/.local /root/.local
+ENV PATH=/root/.local/bin:$PATH
+
+COPY backend /app/backend
+
+RUN chown -R appuser:appuser /app
+USER appuser
+
+# Start Celery worker
+CMD ["celery", "-A", "backend.scraper.core.worker.celery_app", "worker", "--loglevel=info", "--concurrency=4"]
