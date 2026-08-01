@@ -21,7 +21,7 @@ export default function Login() {
       setError(null);
       await login(data);
     } catch (err: any) {
-      setError(err.response?.data?.detail || "Failed to login");
+      setError(err.message || "Failed to login");
     }
   };
 

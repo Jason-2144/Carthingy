@@ -5,8 +5,8 @@
             "framework": "vite"
         },
         "backend": {
-            "root": "backend",
-            "entrypoint": "main.py"
+            "root": ".",
+            "entrypoint": "backend/main.py"
         }
     },
     "rewrites": [

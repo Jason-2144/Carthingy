@@ -4,8 +4,9 @@ import datetime
 
 class UserBase(BaseModel):
     email: str
-    role: str
-    is_active: bool
+    role: str = "user"
+    is_active: bool = True
+    full_name: str | None = None
 
 class UserCreate(UserBase):
     password: str

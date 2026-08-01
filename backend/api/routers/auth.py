@@ -26,6 +26,7 @@ async def register(user_in: UserCreate, db: AsyncSession = Depends(get_db_sessio
     
     db_user = User(
         email=user_in.email,
+        full_name=user_in.full_name,
         password_hash=get_password_hash(user_in.password),
         role=user_in.role,
         is_active=True
