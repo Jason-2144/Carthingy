@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useNavigate } from "react-router-dom";
 import { RegisterSchema, RegisterFormData } from "../types";
 import { useState } from "react";
-import { supabase } from "../services/supabase";
+import { api } from "../services/api";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -20,21 +20,10 @@ export default function Register() {
   const onSubmit = async (data: RegisterFormData) => {
     try {
       setError(null);
-      const { error: signUpError } = await supabase.auth.signUp({
-        email: data.email,
-        password: data.password,
-        options: {
-          data: {
-            full_name: data.full_name,
-          }
-        }
-      });
-      
-      if (signUpError) throw signUpError;
-      
+      await api.post("/auth/register", data);
       navigate("/login");
     } catch (err: any) {
-      setError(err.message || "Failed to register");
+      setError(err.response?.data?.detail || "Failed to register");
     }
   };
 

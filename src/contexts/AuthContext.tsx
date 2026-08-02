@@ -1,12 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { User, LoginFormData } from "../types";
-import { supabase } from "../services/supabase";
+import { api } from "../services/api";
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: (data: LoginFormData) => Promise<void>;
-  logout: () => Promise<void>;
+  logout: () => void;
   checkAuth: () => Promise<void>;
 }
 
@@ -18,21 +18,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const checkAuth = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        // Map Supabase user to our User type
-        setUser({
-          id: session.user.id,
-          email: session.user.email || '',
-          full_name: session.user.user_metadata?.full_name || '',
-          is_active: true,
-          is_superuser: false,
-          created_at: session.user.created_at
-        });
-        localStorage.setItem("token", session.access_token);
-      } else {
-        setUser(null);
-        localStorage.removeItem("token");
+      const token = localStorage.getItem("token");
+      if (token) {
+        const response = await api.get("/auth/me");
+        setUser(response.data);
       }
     } catch (error) {
       setUser(null);
@@ -44,46 +33,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     checkAuth();
-    
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session?.user) {
-        setUser({
-          id: session.user.id,
-          email: session.user.email || '',
-          full_name: session.user.user_metadata?.full_name || '',
-          is_active: true,
-          is_superuser: false,
-          created_at: session.user.created_at
-        });
-        localStorage.setItem("token", session.access_token);
-      } else {
-        setUser(null);
-        localStorage.removeItem("token");
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
   }, []);
 
   const login = async (data: LoginFormData) => {
-    const { data: authData, error } = await supabase.auth.signInWithPassword({
-      email: data.username,
-      password: data.password,
+    const formData = new URLSearchParams();
+    formData.append("username", data.username);
+    formData.append("password", data.password);
+    
+    // FastAPI OAuth2PasswordRequestForm requires form-urlencoded
+    const response = await api.post("/auth/login", formData, {
+      headers: { "Content-Type": "application/x-www-form-urlencoded" }
     });
     
-    if (error) {
-      throw error;
-    }
-    
-    if (authData.session) {
-      localStorage.setItem("token", authData.session.access_token);
-    }
+    localStorage.setItem("token", response.data.access_token);
+    await checkAuth();
   };
 
-  const logout = async () => {
-    await supabase.auth.signOut();
+  const logout = () => {
     localStorage.removeItem("token");
     setUser(null);
   };

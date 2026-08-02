@@ -8,6 +8,7 @@ import { useState } from "react";
 export default function Login() {
   const { login } = useAuth();
   const [error, setError] = useState<string | null>(null);
+
   const {
     register,
     handleSubmit,
@@ -21,7 +22,7 @@ export default function Login() {
       setError(null);
       await login(data);
     } catch (err: any) {
-      setError(err.message || "Failed to login");
+      setError(err.response?.data?.detail || "Failed to login");
     }
   };
 
